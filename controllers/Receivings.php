@@ -177,7 +177,15 @@ class Receivings extends Secure_area
 			}
 			else
 			{
-				$this->receiving_lib->add_item_kit($item_id_or_number_or_item_kit_or_receipt);
+				/**** Edited By HeinHtetAung for fix_item_kit_receiving ****/
+				$item_kit_id = $this->Item_kit->lookup_item_kit_id($item_id_or_number_or_item_kit_or_receipt);
+				$item_kit_items = $this->Item_kit_items->get_info($item_kit_id);
+				if(sizeof($item_kit_items)>1){
+					$this->receiving_lib->add_item_kit($item_id_or_number_or_item_kit_or_receipt);	
+				}else{
+					$this->receiving_lib->add_item_kit_set($item_id_or_number_or_item_kit_or_receipt);
+				}
+				/***************************************************************/
 			}
 		}
 		elseif($this->Item->get_info($item_id_or_number_or_item_kit_or_receipt)->deleted || $this->Item->get_info($this->Item->get_item_id($item_id_or_number_or_item_kit_or_receipt))->deleted || !$this->receiving_lib->add_item($item_id_or_number_or_item_kit_or_receipt,$quantity))

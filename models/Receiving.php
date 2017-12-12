@@ -258,6 +258,241 @@ class Receiving extends CI_Model
 		foreach($items as $line=>$item)
 		{
 			$cur_item_info = $this->Item->get_info($item['item_id']);
+			/**** Edited By HeinHtetAung for fix_item_kit_receiving ****/
+			if($cur_item_info->product_id==null){
+				$item_kit_info = $this->Item_kit->get_info($item['item_kit_id']);
+				
+				$old_itemkit = $item_kit_info;
+				$cur_receiving_itemkit = $item;
+
+				//echo "current receiving item kit <br>";
+				//var_dump($cur_receiving_itemkit);
+				//echo "<hr><br>";
+
+				//echo "old item kit <br>";
+				//var_dump($old_itemkit);
+				//echo "<hr><br>";
+				$cur_item_info = "";
+				$item = array();
+				
+				$item_kit_id = $old_itemkit->item_kit_id;
+				if($old_itemkit->cost_price !== $cur_receiving_itemkit['price'])
+				{
+					$selling_price_item_data = array('cost_price'=>$cur_receiving_itemkit['price']);
+					$res = $this->Item_kit->save($selling_price_item_data,$item_kit_id);
+					//echo "item kit new cost update - ";
+					//var_dump($res);
+					//echo "<hr>";
+				} 
+				$item_kit_items = $this->Item_kit_items->get_info($item_kit_id);
+				foreach($item_kit_items as $i){
+					$cur_item_info = $this->Item->get_info($i->item_id);
+					//echo "item in item kit.<br>";
+					//var_dump($i);
+					$itemprice = $cur_receiving_itemkit['price']/$i->quantity;
+					//echo "<br> new item cost - ".$itemprice;
+					$selling_price_item_data = array('cost_price'=>$itemprice);
+					$res = $this->Item->save($selling_price_item_data,$i->item_id);
+					//echo "<br> cost update to item - ";
+					//var_dump($res);
+					$item = array(
+								'item_id' => $i->item_id,
+								'price' => $itemprice,
+								'expire_date' => $cur_item_info->expire_date,
+								'quantity' => $i->quantity*$cur_receiving_itemkit['quantity'],
+								'line' => $line,
+								'description' => $i->description,
+								'serialnumber' => $i->serialnumber
+							);
+					//echo "<hr>";
+				}		
+
+				$cur_item_location_info = $this->Item_location->get_info($item['item_id']);
+				
+				//echo "<br> item location";	
+				//var_dump($cur_item_location_info);
+				//echo "<hr><br>";
+				
+				if ($item['item_id'] != $store_account_item_id)
+				{
+					$cost_price = ($cur_item_location_info && $cur_item_location_info->cost_price) ? $cur_item_location_info->cost_price : $cur_item_info->cost_price;
+				}
+				else // Set cost price = price so we have no profit
+				{
+
+					$cost_price = $item['price'];
+				}
+				
+				$item_unit_price_before_tax = $item['price'];
+				
+				$expire_date = NULL;
+				
+				if ($item['expire_date'])
+				{
+					$expire_date = date('Y-m-d', strtotime($item['expire_date']));				
+				}
+				
+				$quantity_received = 0;
+				
+				if ($suspended != 0 && $item['quantity_received'] !== NULL)
+				{
+					$quantity_received = $item['quantity_received'];
+					$total_quantity_received+=$item['quantity_received'];
+				}
+				elseif($suspended==0)
+				{
+					$quantity_received = $item['quantity'];
+					$total_quantity_received+=$item['quantity'];
+				}
+				//echo "quantity_received - ".$quantity_received."<hr>";
+				
+				$recv_item_subtotal = $this->receiving_lib->get_item_subtotal($line);
+				$recv_item_total = $this->receiving_lib->get_item_total($line);
+				$recv_item_tax = $recv_item_total - $recv_item_subtotal;
+				$recv_item_profit = $this->receiving_lib->get_item_profit($line,$cost_price);
+				
+				// echo "<br> recv_item_subtotal - ".$recv_item_subtotal." , line - ".$line;
+				// echo "<br> recv_item_total - ".$recv_item_total;
+				// echo "<br> recv_item_tax - ".$recv_item_tax;
+				// echo "<br> recv_item_profit - ".$recv_item_profit;
+				// $recv_profit+=$recv_item_profit;	
+				// echo "<br> recv_profit - ".$recv_profit;
+				// echo "<hr>";
+				
+				$receivings_items_data = array
+				(
+					'receiving_id'=>$receiving_id,
+					'item_id'=>$item['item_id'],
+					'line'=>$item['line'],
+					'description'=>$item['description'],
+					'serialnumber'=>$item['serialnumber'],
+					'quantity_purchased'=>$item['quantity'],
+					'quantity_received'=>$quantity_received,
+					//'discount_percent'=>$item['discount'],
+					'item_cost_price' => $cost_price,
+					'item_unit_price'=>$item['price'],
+					'expire_date' => $expire_date,
+					'subtotal' => $recv_item_subtotal,
+					'total' => $recv_item_total,
+					'tax' => $recv_item_tax,
+					'profit' =>$recv_item_profit,	
+					'received_itemkit' => $item_kit_id							
+				);
+
+				// echo "<br> receivings_items_data <br>";
+				// var_dump($receivings_items_data);
+				$res = $this->db->insert('receivings_items',$receivings_items_data);
+				// echo "<br> insert receivings_items - ";
+				// var_dump($res);
+				// echo "<hr>";
+
+				if ($suspended == 0)
+				{
+					if ($this->config->item('calculate_average_cost_price_from_receivings'))
+					{
+						$receivings_items_data['item_unit_price_before_tax'] = $item_unit_price_before_tax;
+						$this->calculate_and_update_average_cost_price_for_item($item['item_id'], $receivings_items_data);
+						unset($receivings_items_data['item_unit_price_before_tax']);
+					}
+				}
+				
+				//Update stock quantity IF not a service item
+				if (!$cur_item_info->is_service)
+				{
+					//If we have a null quanity set it to 0, otherwise use the value
+					$cur_item_location_info->quantity = $cur_item_location_info->quantity !== NULL ? $cur_item_location_info->quantity : 0;
+					
+					//This means we never adjusted quantity_received so we should accept all
+					if ($suspended == 0 && $item['quantity_received'] === NULL)
+					{	
+						$inventory_to_add = $item['quantity'];
+					}
+					else
+					{					
+						if ($suspended == 0)
+						{
+							$inventory_to_add = $item['quantity'];
+						}
+						else
+						{
+							$inventory_to_add = $item['quantity_received'];
+						}
+						
+					}
+
+					if ($inventory_to_add !=0)
+					{
+						//echo "<br>".$cur_item_location_info->quantity." + ".$inventory_to_add; exit; 
+						$res = $this->Item_location->save_quantity($cur_item_location_info->quantity + $inventory_to_add, $item['item_id']);
+						// echo "<br> save into item_location update quantity - ";
+						// var_dump($res);
+						// echo "<br> new quantity is - ";
+						// echo $cur_item_location_info->quantity + $inventory_to_add;
+						// echo "<hr><br>";
+
+						$recv_remarks ='RECV '.$receiving_id;
+						$inv_data = array
+						(
+							'trans_date'=>date('Y-m-d H:i:s'),
+							'trans_items'=>$item['item_id'],
+							'trans_user'=>$employee_id,
+							'trans_comment'=>$recv_remarks,
+							'trans_inventory'=>$inventory_to_add,
+							'location_id'=>$this->Employee->get_logged_in_employee_current_location_id()
+						);
+						$res = $this->Inventory->insert($inv_data);
+						// echo "inv_data <br>";
+						// var_dump($inv_data);
+						// echo "<br> save to inventory table - ";
+						// var_dump($res);
+						// echo "<hr>";
+						// //exit;
+					}
+				}
+				
+				if($suspended  == 0 && $mode=='transfer' && $location_id && $cur_item_location_info->quantity !== NULL && !$cur_item_info->is_service)
+				{				
+					$this->Item_location->save_quantity($this->Item_location->get_location_quantity($item['item_id'],$location_id) + ($item['quantity'] * -1),$item['item_id'],$location_id);
+					
+					if (!isset($inv_data))
+					{
+						$inv_data = array
+						(
+							'trans_date'=>date('Y-m-d H:i:s'),
+							'trans_items'=>$item['item_id'],
+							'trans_user'=>$employee_id,
+							'trans_comment'=>'RECV '.$receiving_id,
+						);
+					}
+					
+					//Change values from $inv_data above and insert
+					$inv_data['trans_inventory']=$item['quantity'] * -1;
+					$inv_data['location_id']=$location_id;
+					$this->Inventory->insert($inv_data);
+				}		
+
+				if ($this->config->item('charge_tax_on_recv'))
+				{
+					foreach($this->Item_taxes_finder->get_info($item['item_id'],'receiving') as $row)
+					{
+						$tax_name = $row['percent'].'% ' . $row['name'];
+
+						//Only save receiving if the tax has NOT been deleted
+						if (!in_array($tax_name, $this->receiving_lib->get_deleted_taxes()))
+						{	
+							$this->db->insert('receivings_items_taxes', array(
+								'receiving_id' 	=>$receiving_id,
+								'item_id' 	=>$item['item_id'],
+								'line'      =>$item['line'],
+								'name'		=>$row['name'],
+								'percent' 	=>$row['percent'],
+								'cumulative'=>$row['cumulative']
+							));
+						}
+					}
+				}
+			}else{
+			/***************************************************************/
 			$cur_item_location_info = $this->Item_location->get_info($item['item_id']);
 			
 			if($cur_item_info->unit_price !== $item['selling_price'])
@@ -419,6 +654,7 @@ class Receiving extends CI_Model
 					}
 				}
 			}
+			}  // Added by HeinHtetAung for fix_item_kit_receiving
 		}		
 		$this->update(array('profit'=> $recv_profit,'total_quantity_received' => $total_quantity_received),$receiving_id);
 		$this->db->trans_complete();

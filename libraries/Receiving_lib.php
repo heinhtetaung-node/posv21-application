@@ -590,6 +590,147 @@ class receiving_lib
 		return TRUE;
 	}
 
+
+	/**** Added By HeinHtetAung for fix_item_kit_receiving ****/
+	function add_item_kit_set($external_item_kit_id_or_item_number)
+	{
+		if (strpos(strtolower($external_item_kit_id_or_item_number), 'kit') !== FALSE)
+		{
+			//KIT #
+			$pieces = explode(' ',$external_item_kit_id_or_item_number);
+			$item_kit_id = (int)$pieces[1];	
+		}
+		else
+		{
+			//Lookup item based on lookup order defined in store config
+			$item_kit_id = $this->CI->Item_kit->lookup_item_kit_id($external_item_kit_id_or_item_number);
+		}
+		
+		if ($item_kit_id === FALSE)
+		{
+			return false;
+		}
+		
+		// foreach ($this->CI->Item_kit_items->get_info($item_kit_id) as $item_kit_item)
+		// {
+		// 	$this->add_item($item_kit_item->item_id, $item_kit_item->quantity);
+		// }
+
+		$item_kit_info = $this->CI->Item_kit->get_info($item_kit_id);
+		$items = $this->get_cart();
+
+        //We need to loop through all items in the cart.
+        //If the item is already there, get it's key($updatekey).
+        //We also need to get the next key that we are going to use in case we need to add the
+        //item to the cart. Since items can be deleted, we can't use a count. we use the highest key + 1.
+
+  		$maxkey=0;                       //Highest key so far
+  		$itemalreadyinsale=FALSE;        //We did not find the item yet.
+		$insertkey=0;                    //Key to use for new entry.
+		$updatekey=0;                    //Key to use to update(quantity)
+
+		foreach ($items as $item)
+		{
+    		//We primed the loop so maxkey is 0 the first time.
+    		//Also, we have stored the key in the element itself so we can compare.
+
+			if($maxkey <= $item['line'])
+			{
+				$maxkey = $item['line'];
+			}
+			
+			if(isset($item['item_kit_id']) && $item['item_kit_id']==$item_kit_id && 
+				(empty($item['rule']) || ($force_add_or_update || isset($item['rule']['type']) && (!in_array($item['rule']['type'], array('buy_x_get_discount','buy_x_get_y_free', 'simple_discount')))))) //We skip items with price rules discount as we don't want to update these normally unless $force_add_or_update is true
+			{
+				$itemalreadyinsale=TRUE;
+				$updatekey=$item['line'];
+			}
+		}
+			
+		$insertkey=$maxkey+1;
+		$price_to_use=$item_kit_info->cost_price;
+		//$this->get_price_for_item_kit($item_kit_id);
+
+		$cost_price_to_use = ($item_kit_location_info && $item_kit_location_info->cost_price) ? $item_kit_location_info->cost_price : $item_kit_info->cost_price;
+
+		//array/cart records are identified by $insertkey and item_id is just another field.
+		$item = array(($line === NULL ? $insertkey : $line)=>
+		array(
+			'item_kit_id'=>$item_kit_id,
+			'line'=>$line === NULL ? $insertkey : $line,
+			'item_number'=>$item_kit_info->item_kit_number,
+			'product_id'=>$item_kit_info->product_id,
+			'name'=>$item_kit_info->name,
+			'change_cost_price' =>$item_kit_info->change_cost_price,
+			'cost_price' => $cost_price!=null ? $cost_price : $cost_price_to_use,
+			'size' => '',
+			'description'=>$description!=null ? $description: $item_kit_info->description,
+			'quantity'=>$quantity!=null ? $quantity : 1,
+      		'discount'=>$discount!=null ? $discount : 0,
+			'price'=>$price !== null ? $price : $price_to_use,
+			'regular_price' => $regular_price,
+			'tax_included'=> $item_kit_info->tax_included,
+			'disable_loyalty' => $item_kit_info->disable_loyalty,
+			'is_ebt_item' => $item_kit_info->is_ebt_item,
+			'min_edit_price' => $item_kit_info->min_edit_price,
+			'max_edit_price' => $item_kit_info->max_edit_price,
+			'max_discount_percent' => $item_kit_info->max_discount_percent,
+			'rule' => $rule,
+			)
+		);
+
+
+
+		//Item already exists and is not serialized, add to quantity
+		if($itemalreadyinsale && !$this->CI->config->item('do_not_group_same_items') && isset($items[$line === FALSE ? $updatekey : $line]))
+		{
+			$items[$line === FALSE ? $updatekey : $line]['quantity']+=$quantity;
+			$item_kit_key = $line === FALSE ? $updatekey : $line;
+			
+		}
+		else
+		{
+			//add to existing array
+			$items+=$item;
+			$item_kit_key = $line === FALSE ? $insertkey : $line;
+		}
+		
+		//needed here				
+		if (isset($rule['type']) && $rule['type'] == 'buy_x_get_y_free')
+		{
+			$quantity_total = $items[$item_kit_key]['quantity'];
+			$items[$item_kit_key]['rule']['rule_discount'] = $quantity_total * $regular_price;
+		}
+		
+		if (isset($rule['type']) && ($rule['type'] == 'buy_x_get_discount' || $rule['type'] == 'simple_discount'))
+		{
+			$quantity_total = $items[$item_kit_key]['quantity'];
+			$price = $items[$item_kit_key]['price'];
+		
+			if(isset($items[$item_kit_key]['rule']['percent_off']))
+			{
+				$items[$item_kit_key]['rule']['rule_discount'] = $quantity_total * $price * ($items[$item_kit_key]['rule']['percent_off']/100);
+			} 
+			elseif(isset($items[$item_kit_key]['rule']['fixed_off']))
+			{
+				$items[$item_kit_key]['rule']['rule_discount'] = $quantity_total * $items[$item_kit_key]['rule']['fixed_off'];
+			}
+		
+		}
+		
+		$this->set_cart($items,$update_register_cart_data);
+		
+		if($apply_price_rules)
+		{
+			$params = array('item_kit_id' => $item_kit_id);
+			$this->do_price_rules($params);
+		}
+		
+		return TRUE;
+	}
+	/***************************************************************/
+
+
 	function copy_entire_receiving($receiving_id, $is_receipt = false)
 	{
 		$this->empty_cart();
