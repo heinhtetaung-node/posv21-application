@@ -157,6 +157,29 @@
 											<dd><a href="#" id="quantity_received_<?php echo $line;?>" class="xeditable" data-type="text" data-validate-number="true" data-pk="1" data-name="quantity_received" data-value="<?php echo H(to_quantity($item['quantity_received'])); ?>" data-url="<?php echo site_url('receivings/edit_item/'.$line); ?>" data-title="<?php echo H(lang('common_qty_received')); ?>"><?php echo H(to_quantity($item['quantity_received']));?></a></dd>
 										<?php } ?>
 										
+
+										<!-- Edited By HeinHtetAung for item_kit_stock_show -->
+										<?php 
+										if (isset($item['item_id']) && $item['item_id']) 
+										{ 
+											
+										}else{
+											$item_kit_items = $this->Item_kit_items->get_info($item['item_kit_id']);
+											if(sizeof($item_kit_items)==1){
+												$qty_per_1kit=$item_kit_items[0]->quantity;	
+												$item_id = $item_kit_items[0]->item_id;
+												$item_location_info = $this->Item_location->get_info($item_id, false, true);
+												$cur_quantity = $item_location_info->quantity/$qty_per_1kit;
+												$cur_quantity = floor($cur_quantity);
+												?>
+												<dt><?php echo lang('common_stock'); ?></dt>
+												<dd><?php echo to_quantity($cur_quantity); ?></dd>
+												<?php
+											}
+										}
+										?>
+										<!-- *************** -->
+
 										<?php if (isset($item['item_id']) && $item['item_id']) 
 										{ 
 											$item_location_info = $this->Item_location->get_info($item['item_id'], false, true);
