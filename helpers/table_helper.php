@@ -623,6 +623,24 @@ function get_item_kit_data_row($item_kit,$controller)
 				$val = H($val);
 			}
 			
+			/* Edited by HeinHtetAung for item_kit_qty_show */
+			if($column_values['label']=='Item kit ID'){
+				$item_kit_id = $val;
+			}
+			if($column_values['label']=='Quantity'){
+				$item_kit_items = $CI->Item_kit_items->get_info($item_kit_id);
+				$cur_quantity = "";
+				if(sizeof($item_kit_items)==1){
+					$qty_per_1kit=$item_kit_items[0]->quantity;	
+					$item_id = $item_kit_items[0]->item_id;
+					$item_location_info = $CI->Item_location->get_info($item_id, false, true);
+					$cur_quantity = $item_location_info->quantity/$qty_per_1kit;
+					$cur_quantity = floor($cur_quantity);
+				}
+				$val = $cur_quantity;
+			}
+			/*********************/
+
 			$table_data_row.='<td>'.$val.'</td>';
 			//Unset for next round of the loop
 			unset($data);
