@@ -1,6 +1,25 @@
 <?php $this->load->view("partial/header"); 
 $this->load->helper('demo');
+?>
 
+<!-- Edited By HeinHtetAung for online_offline_sellings -->
+<style>
+	.progress{
+		width:10px;
+		height:50px;
+		background-color:green;
+	}
+</style>
+<div class="alert alert-success" id="uploadtext">
+  If your sales are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload</a>.
+  If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>.
+</div>
+
+<div class="progress hidden" id="progressbar"></div>
+<div class="alert hidden" id="progresstextid">Please wait while uploading sales.</div>
+<!-- ************************************************************* -->
+
+<?php
 if (is_on_phppos_host()) {
 ?>
 	<?php if (isset($trial_on) && $trial_on === true) { ?>
@@ -431,6 +450,68 @@ if (!is_on_demo_host() && !$this->config->item('hide_test_mode_home') && !$this-
 		    });
 		}
 	});
+
+
+	/****** Edited by HeinHtetAung for online_offline_selling ******/
+	$('#uploadsale').click(function(e) {
+		e.preventDefault();
+		starttran("<?php echo site_url('config/uploadServer'); ?>");
+	});
+	$('#downloadsale').click(function(e) {
+		e.preventDefault();
+		starttran("<?php echo site_url('config/updateFromServer'); ?>");
+	});
+	starttran = function(paraurl){
+		$.ajax({
+			xhr: function () {
+			var xhr = new window.XMLHttpRequest();
+			xhr.addEventListener("progress", function (evt) {
+				$('#progresstextid').removeClass('hidden');
+				$('.progress').removeClass('hidden');
+				if (evt.lengthComputable) {
+					var percentComplete = evt.loaded / evt.total;
+					console.log(percentComplete);
+					setTimeout(function(){
+						$('.progress').css({
+							width: percentComplete * 100 + '%',
+							transition: "width 2s"
+						});
+					}, 100);
+					if (percentComplete === 1) {
+						// $('.progress').addClass('hide');
+						setTimeout(function(){
+							$('#progresstextid').html("");
+						}, 2000);
+					}
+				}
+			}, false);
+			return xhr;
+			},
+			method: 'GET',
+			url: paraurl,
+			dataType: 'json',
+			success: function(data) {
+				console.log('YAYE!', arguments[0]);
+				$('#uploadtext').hide();
+				//setTimeout(function(){
+				//$( "#progressbar" ).progressbar({
+				//  value: 100
+				//});
+				//}, 1000);
+				setTimeout(function(){
+					$('#progresstextid').html(data.message);
+				}, 2000);
+			},
+			error: function() {
+				console.log('AWWW!');
+				setTimeout(function(){
+					$('#progresstextid').html("Something error occoured.");
+				}, 2000);
+			}
+		});    
+	}
+	/************************************************************************/
+
 </script>
 
 <?php $this->load->view("partial/footer"); ?>
