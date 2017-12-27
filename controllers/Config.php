@@ -17,61 +17,77 @@ class Config extends Secure_area
 		
 		// sales_start({
 		$this->hodb = $this->load->database('ho',TRUE);
+		$this->hodb->initialize();
+		//$this->hodb->trans_start();
 		$query=$this->hodb->query("SELECT sale_id FROM phppos_sales WHERE location_id=$cur_location_id ORDER BY sale_id DESC LIMIT 1");
 		$row=$query->row_array();
 		$ho_last_sale_id=$row['sale_id'];
 		
 		
+		/**** insert customers, suppliers data ****/
+		$query=$this->hodb->query("SELECT person_id FROM phppos_people ORDER BY person_id DESC LIMIT 1");
+		$row=$query->row_array();
+		$ho_last_person_id=$row['person_id'];
+
+		$query=$this->db->query("SELECT * FROM phppos_people WHERE person_id>$ho_last_person_id");
+		$rows=$query->result_array();				
+		$c_person_sql="";
+		foreach($rows as $row){
+			$sql=$this->hodb->insert_sql('phppos_people', $row);	
+			$c_person_sql=$c_person_sql.$sql." \n ";
+		}
+
+		$query=$this->db->query("SELECT * FROM phppos_customers WHERE person_id>$ho_last_person_id");
+		$rows=$query->result_array();				
+		foreach($rows as $row){
+			$sql=$this->hodb->insert_sql('phppos_customers', $row);	
+			$c_person_sql=$c_person_sql.$sql." \n ";
+		}
+
+		$query=$this->db->query("SELECT * FROM phppos_suppliers WHERE person_id>$ho_last_person_id");
+		$rows=$query->result_array();				
+		foreach($rows as $row){
+			$sql=$this->hodb->insert_sql('phppos_suppliers', $row);	
+			$c_person_sql=$c_person_sql.$sql." \n ";
+		}
+		//echo "<hr>";
+		//echo $c_person_sql;
+		// person finish });
+
 		/**** insert sales data ****/
 		$query=$this->db->query("SELECT * FROM phppos_sales WHERE location_id=$cur_location_id AND sale_id>$ho_last_sale_id ORDER BY sale_id");
 		$rows=$query->result_array();				
 		$a_sales_sql="";
 		foreach($rows as $row){
-			if($row['customer_id']==NULL){
-				$row['customer_id']="NULL";
-			}
-			if($row['deleted_by']==NULL){
-				$row['deleted_by']="NULL";
-			}
-			if($row['tier_id']==NULL){
-				$row['tier_id']="NULL";
-			}
-			if($row['signature_image_id']==NULL){
-				$row['signature_image_id']="NULL";
-			}
-			$sql="INSERT INTO `phppos_sales`(`sale_time`, `customer_id`, `employee_id`, `sold_by_employee_id`, `comment`, `show_comment_on_receipt`, `sale_id`, `payment_type`, `cc_ref_no`, `auth_code`, `deleted_by`, `deleted`, `suspended`, `store_account_payment`, `was_layaway`, `was_estimate`, `location_id`, `register_id`, `tier_id`, `points_used`, `points_gained`, `did_redeem_discount`, `signature_image_id`, `deleted_taxes`, `currency`, `exchange_rate`) VALUES ('{$row['sale_time']}','{$row['customer_id']}','{$row['employee_id']}','{$row['sold_by_employee_id']}','{$row['comment']}','{$row['show_comment_on_receipt']}','{$row['sale_id']}','{$row['payment_type']}','{$row['cc_ref_no']}','{$row['auth_code']}',{$row['deleted_by']},'{$row['deleted']}','{$row['suspended']}','{$row['store_account_payment']}','{$row['was_layaway']}','{$row['was_estimate']}','{$row['location_id']}','{$row['register_id']}',{$row['tier_id']},'{$row['points_used']}','{$row['points_gained']}','{$row['did_redeem_discount']}',{$row['signature_image_id']},'{$row['deleted_taxes']}','{$row['currency']}','{$row['exchange_rate']}'); \n";
-			
-			$a_sales_sql=$a_sales_sql.$sql;
+			$sql = $this->hodb->insert_sql('phppos_sales', $row);
+			$a_sales_sql=$a_sales_sql.$sql." \n ";
 		}
 		//echo $a_sales_sql;
 		
 		
 		/**** insert sales_payments data ****/
-		$query=$this->db->query("SELECT * FROM phppos_sales_payments LEFT JOIN phppos_sales ON phppos_sales_payments.sale_id=phppos_sales.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_payments.sale_id>$ho_last_sale_id ORDER BY phppos_sales_payments.payment_id");
+		$query=$this->db->query("SELECT phppos_sales_payments.* FROM phppos_sales_payments LEFT JOIN phppos_sales ON phppos_sales_payments.sale_id=phppos_sales.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_payments.sale_id>$ho_last_sale_id ORDER BY phppos_sales_payments.payment_id");
 		$rows=$query->result_array();				
 		$b_sales_payments_sql="";
 		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_sales_payments` (`sale_id`, `payment_type`, `payment_amount`, `payment_date`, `truncated_card`, `card_issuer`, `auth_code`, `ref_no`, `cc_token`, `acq_ref_data`, `process_data`, `entry_method`, `aid`, `tvr`, `iad`, `tsi`, `arc`, `cvm`, `tran_type`, `application_label`) VALUES ({$row['sale_id']}, '{$row['payment_type']}', '{$row['payment_amount']}', '{$row['payment_date']}', '{$row['truncated_card']}', '{$row['card_issuer']}', '{$row['auth_code']}', '{$row['ref_no']}', '{$row['cc_token']}', '{$row['acq_ref_data']}', '{$row['process_data']}', '{$row['entry_method']}', '{$row['aid']}', '{$row['tvr']}', '{$row['iad']}', '{$row['tsi']}', '{$row['arc']}', '{$row['cvm']}', '{$row['tran_type']}', '{$row['application_label']}'); \n";
-			
-			$b_sales_payments_sql=$b_sales_payments_sql.$sql;
+			$sql=$this->hodb->insert_sql('phppos_sales_payments', $row);
+			$b_sales_payments_sql=$b_sales_payments_sql.$sql." \n ";
 		}
 		//echo "<hr>";
 		//echo $b_sales_payments_sql;
 		
 		
 		/**** insert sales_items data ****/
-		$query=$this->db->query("SELECT * FROM phppos_sales_items LEFT JOIN phppos_sales ON phppos_sales.sale_id=phppos_sales_items.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_items.sale_id>$ho_last_sale_id ORDER BY phppos_sales_items.sale_id");
+		$query=$this->db->query("SELECT phppos_sales_items.* FROM phppos_sales_items LEFT JOIN phppos_sales ON phppos_sales.sale_id=phppos_sales_items.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_items.sale_id>$ho_last_sale_id ORDER BY phppos_sales_items.sale_id");
 		$rows=$query->result_array();				
 		$c_sales_items_sql="";
 		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_sales_items` (`sale_id`, `item_id`, `line`, `description`, `serialnumber`, `quantity_purchased`, `discount_percent`, `discount_type`, `discount_amount`, `sel_location_id`, `item_cost_price`, `item_unit_price`, `commission`, `fifoinfos`) VALUES ({$row['sale_id']}, {$row['item_id']}, {$row['line']}, '{$row['description']}', '{$row['serialnumber']}', {$row['quantity_purchased']}, {$row['discount_percent']}, '{$row['discount_type']}', {$row['discount_amount']}, '{$row['sel_location_id']}', '{$row['item_cost_price']}', '{$row['item_unit_price']}', '{$row['commission']}', '{$row['fifoinfos']}'); \n";
-			
-			$c_sales_items_sql=$c_sales_items_sql.$sql;
+			$sql=$this->hodb->insert_sql('phppos_sales_items', $row);	
+			$c_sales_items_sql=$c_sales_items_sql.$sql." \n ";
 		}
 		//echo "<hr>";
 		//echo $c_sales_items_sql;
 		// sales_finish });
-		
 		
 		
 		// receiving_start ({
@@ -84,34 +100,20 @@ class Config extends Secure_area
 		$rows=$query->result_array();				
 		$a_receiving_sql="";
 		foreach($rows as $row){
-			if($row['supplier_id']==NULL){
-				$row['supplier_id']="NULL";
-			}
-			if($row['deleted_by']==NULL){
-				$row['deleted_by']="NULL";
-			}
-			if($row['transfer_to_location_id']==NULL){
-				$row['transfer_to_location_id']="NULL";
-			}
-			if($row['deleted_taxes']==NULL){
-				$row['deleted_taxes']="NULL";
-			}
-			$sql="INSERT INTO `phppos_receivings` (`receiving_id`, `supplier_id`, `employee_id`, `payment_type`, `comment`, `suspended`, `location_id`, `transfer_to_location_id`, `deleted`, `deleted_by`, `deleted_taxes`, `is_po`, `receiving_time`) VALUES ('{$row['receiving_id']}', {$row['supplier_id']}, '{$row['employee_id']}', '{$row['payment_type']}', '{$row['comment']}', {$row['suspended']}, '{$row['location_id']}', {$row['transfer_to_location_id']}, {$row['deleted']}, {$row['deleted_by']}, {$row['deleted_taxes']}, {$row['is_po']}, '{$row['receiving_time']}'); \n";
-			
-			$a_receiving_sql=$a_receiving_sql.$sql;
+			$sql=$this->hodb->insert_sql('phppos_receivings', $row);
+			$a_receiving_sql=$a_receiving_sql.$sql." \n ";
 		}
 		//echo "<hr>";
 		//echo $a_receiving_sql;
 		
 		
 		/**** insert receiving_items data ****/
-		$query=$this->db->query("SELECT * FROM phppos_receivings_items LEFT JOIN phppos_receivings ON phppos_receivings_items.receiving_id=phppos_receivings.receiving_id WHERE phppos_receivings.location_id=$cur_location_id AND phppos_receivings_items.receiving_id>$ho_last_receiving_id ORDER BY phppos_receivings_items.receiving_id");
+		$query=$this->db->query("SELECT phppos_receivings_items.* FROM phppos_receivings_items LEFT JOIN phppos_receivings ON phppos_receivings_items.receiving_id=phppos_receivings.receiving_id WHERE phppos_receivings.location_id=$cur_location_id AND phppos_receivings_items.receiving_id>$ho_last_receiving_id ORDER BY phppos_receivings_items.receiving_id");
 		$rows=$query->result_array();				
 		$b_receiving_items_sql="";
 		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_receivings_items`(`receiving_id`, `item_id`, `description`, `serialnumber`, `line`, `quantity_purchased`, `quantity_received`, `item_cost_price`, `item_unit_price`, `discount_percent`, `expire_date`) VALUES ('{$row['receiving_id']}','{$row['item_id']}','{$row['description']}','{$row['serialnumber']}','{$row['line']}','{$row['quantity_purchased']}','{$row['quantity_received']}','{$row['item_cost_price']}','{$row['item_unit_price']}','{$row['discount_percent']}','{$row['expire_date']}'); \n";
-			
-			$b_receiving_items_sql=$b_receiving_items_sql.$sql;
+			$sql=$this->hodb->insert_sql('phppos_receivings_items', $row);
+			$b_receiving_items_sql=$b_receiving_items_sql.$sql." \n ";
 		}
 		//echo "<hr>";
 		//echo $b_receiving_items_sql;
@@ -130,9 +132,8 @@ class Config extends Secure_area
 		$rows=$query->result_array();				
 		$d_inventory_sql="";
 		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_inventory` (`trans_id`, `trans_date`, `trans_items`, `trans_user`, `trans_comment`, `trans_inventory`, `location_id`) VALUES ('{$row['trans_id']}', '{$row['trans_date']}', {$row['trans_items']}, '{$row['trans_user']}', '{$row['trans_comment']}', {$row['trans_inventory']}, '{$row['location_id']}'); \n";
-			
-			$d_inventory_sql=$d_inventory_sql.$sql;
+			$sql = $this->hodb->insert_sql('phppos_inventory', $row);
+			$d_inventory_sql=$d_inventory_sql.$sql." \n ";
 		}
 		//echo "<hr>";
 		//echo $d_inventory_sql;
@@ -177,263 +178,47 @@ class Config extends Secure_area
 		$f_customers_sql="";
 		foreach($rows as $row){
 			$person_id=$row['customer_id'];
-			$query=$this->db->query("SELECT * FROM `phppos_customers` WHERE `person_id` = $person_id");
-			$row1=$query->row_array();
-			if($row1['member_id']==NULL){
-				$row1['member_id']="NULL";
+			if($person_id!=""){
+				$query=$this->db->query("SELECT * FROM `phppos_customers` WHERE `person_id` = $person_id");
+				$row1=$query->row_array();
+				if($row1['member_id']==NULL){
+					$row1['member_id']="NULL";
+				}
+				$sql="UPDATE `phppos_customers` SET `balance` = '{$row1['balance']}', `points` = '
+				{$row1['points']}', `current_spend_for_points` = '{$row1['current_spend_for_points']}', `current_sales_for_discount` = '{$row1['current_sales_for_discount']}' WHERE person_id = $person_id; \n";
+				$f_customers_sql=$f_customers_sql.$sql;
 			}
-			$sql="UPDATE `phppos_customers` SET `balance` = '{$row1['balance']}', `points` = '
-			{$row1['points']}', `current_spend_for_points` = '{$row1['current_spend_for_points']}', `current_sales_for_discount` = '{$row1['current_sales_for_discount']}', `is_member` = '{$row1['is_member']}', `member_id` = {$row1['member_id']} WHERE person_id = $person_id; \n";
-			$f_customers_sql=$f_customers_sql.$sql;
 		}
 		//echo "<hr>";
 		//echo $f_customers_sql;
 		
-		$completesql=$a_sales_sql."\n".$b_sales_payments_sql."\n".$c_sales_items_sql."\n".$a_receiving_sql."\n".$b_receiving_items_sql."\n".$d_inventory_sql."\n".$e_location_items_sql."\n".$f_customers_sql;
+		$completesql=$c_person_sql."\n".$a_sales_sql."\n".$b_sales_payments_sql."\n".$c_sales_items_sql."\n".$a_receiving_sql."\n".$b_receiving_items_sql."\n".$d_inventory_sql."\n".$e_location_items_sql."\n".$f_customers_sql;
 		
-		if($completesql!="\n\n\n\n\n\n\n"){
+		if($completesql!="\n\n\n\n\n\n\n\n"){
 			$handle = fopen('upload/local-upload-'.date("d_m_Y_h_i_sa").'-by-'.$cur_location_id.'.sql','w+');
 			fwrite($handle,$completesql);
 			fclose($handle);
 		}
 		
-		$completesql=$a_sales_sql.$b_sales_payments_sql.$c_sales_items_sql.$a_receiving_sql.$b_receiving_items_sql.$d_inventory_sql.$e_location_items_sql.$f_customers_sql;
+		$completesql=$c_person_sql.$a_sales_sql.$b_sales_payments_sql.$c_sales_items_sql.$a_receiving_sql.$b_receiving_items_sql.$d_inventory_sql.$e_location_items_sql.$f_customers_sql;
+		
+		//$this->hodb->trans_complete();
 		
 		if($completesql!=""){
-			
 			$result = mysqli_multi_query($this->hodb->conn_id,$completesql);
-			
-			/* To solve the error  Commands out of sync; you can't run this command now add following two lines - restart the db ({ */
-			//http://stackoverflow.com/questions/16029729/mysql-error-commands-out-of-sync-you-cant-run-this-command-now
-			$this->hodb->close();
-			$this->hodb->initialize();
-			/* }); */
 			
 			if($result==false){
 				var_dump(mysqli_error($this->hodb->conn_id));
 			}else{
-				echo json_encode(array("success"=>true, "message"=>"successfully uploaded to server."));
+				$this->hodb->close();
+				echo json_encode(array("success"=>true, "message"=>"Datas are successfully uploaded to server."));
 			}
-			
 		}else{
-			echo json_encode(array("success"=>true, "message"=>"Sales are already uploaded to server."));
+			echo json_encode(array("success"=>true, "message"=>"Datas are already uploaded to server."));
 		}
 	}
 	
-	function updateFromServer(){ //<!-- multilocation offline selling -->
-		$this->load->model('Employee');
-		$cur_location_id=$this->Employee->get_logged_in_employee_current_location_id();
-		
-		
-		// sales_start({
-		$this->hodb = $this->load->database('ho',TRUE);
-		$query=$this->db->query("SELECT sale_id FROM phppos_sales WHERE location_id=$cur_location_id ORDER BY sale_id DESC LIMIT 1");
-		$row=$query->row_array();
-		$_last_sale_id=$row['sale_id'];
-		
-		
-		/**** insert sales data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_sales WHERE location_id=$cur_location_id AND sale_id>$_last_sale_id ORDER BY sale_id");
-		
-		//echo $_last_sale_id;
-		//echo "SELECT * FROM phppos_sales WHERE location_id=$cur_location_id AND sale_id>$_last_sale_id ORDER BY sale_id";
-		$rows=$query->result_array();				
-		$a_sales_sql="";
-		foreach($rows as $row){
-			if($row['customer_id']==NULL){
-				$row['customer_id']="NULL";
-			}
-			if($row['deleted_by']==NULL){
-				$row['deleted_by']="NULL";
-			}
-			if($row['tier_id']==NULL){
-				$row['tier_id']="NULL";
-			}
-			if($row['signature_image_id']==NULL){
-				$row['signature_image_id']="NULL";
-			}
-			$sql="INSERT INTO `phppos_sales`(`sale_time`, `customer_id`, `employee_id`, `sold_by_employee_id`, `comment`, `show_comment_on_receipt`, `sale_id`, `payment_type`, `cc_ref_no`, `auth_code`, `deleted_by`, `deleted`, `suspended`, `store_account_payment`, `was_layaway`, `was_estimate`, `location_id`, `register_id`, `tier_id`, `points_used`, `points_gained`, `did_redeem_discount`, `signature_image_id`, `deleted_taxes`, `currency`, `exchange_rate`) VALUES ('{$row['sale_time']}','{$row['customer_id']}','{$row['employee_id']}','{$row['sold_by_employee_id']}','{$row['comment']}','{$row['show_comment_on_receipt']}','{$row['sale_id']}','{$row['payment_type']}','{$row['cc_ref_no']}','{$row['auth_code']}',{$row['deleted_by']},'{$row['deleted']}','{$row['suspended']}','{$row['store_account_payment']}','{$row['was_layaway']}','{$row['was_estimate']}','{$row['location_id']}','{$row['register_id']}',{$row['tier_id']},'{$row['points_used']}','{$row['points_gained']}','{$row['did_redeem_discount']}',{$row['signature_image_id']},'{$row['deleted_taxes']}','{$row['currency']}','{$row['exchange_rate']}'); \n";
-			
-			$a_sales_sql=$a_sales_sql.$sql;
-		}
-		//echo $a_sales_sql;
-		
-		
-		/**** insert sales_payments data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_sales_payments LEFT JOIN phppos_sales ON phppos_sales_payments.sale_id=phppos_sales.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_payments.sale_id>$_last_sale_id ORDER BY phppos_sales_payments.payment_id");
-		$rows=$query->result_array();				
-		$b_sales_payments_sql="";
-		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_sales_payments` (`sale_id`, `payment_type`, `payment_amount`, `payment_date`, `truncated_card`, `card_issuer`, `auth_code`, `ref_no`, `cc_token`, `acq_ref_data`, `process_data`, `entry_method`, `aid`, `tvr`, `iad`, `tsi`, `arc`, `cvm`, `tran_type`, `application_label`) VALUES ({$row['sale_id']}, '{$row['payment_type']}', '{$row['payment_amount']}', '{$row['payment_date']}', '{$row['truncated_card']}', '{$row['card_issuer']}', '{$row['auth_code']}', '{$row['ref_no']}', '{$row['cc_token']}', '{$row['acq_ref_data']}', '{$row['process_data']}', '{$row['entry_method']}', '{$row['aid']}', '{$row['tvr']}', '{$row['iad']}', '{$row['tsi']}', '{$row['arc']}', '{$row['cvm']}', '{$row['tran_type']}', '{$row['application_label']}'); \n";
-			
-			$b_sales_payments_sql=$b_sales_payments_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $b_sales_payments_sql;
-		
-		
-		/**** insert sales_items data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_sales_items LEFT JOIN phppos_sales ON phppos_sales.sale_id=phppos_sales_items.sale_id WHERE phppos_sales.location_id=$cur_location_id AND phppos_sales_items.sale_id>$_last_sale_id ORDER BY phppos_sales_items.sale_id");
-		$rows=$query->result_array();				
-		$c_sales_items_sql="";
-		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_sales_items` (`sale_id`, `item_id`, `line`, `description`, `serialnumber`, `quantity_purchased`, `discount_percent`, `discount_type`, `discount_amount`, `sel_location_id`, `item_cost_price`, `item_unit_price`, `commission`, `fifoinfos`) VALUES ({$row['sale_id']}, {$row['item_id']}, {$row['line']}, '{$row['description']}', '{$row['serialnumber']}', {$row['quantity_purchased']}, {$row['discount_percent']}, '{$row['discount_type']}', {$row['discount_amount']}, '{$row['sel_location_id']}', '{$row['item_cost_price']}', '{$row['item_unit_price']}', '{$row['commission']}', '{$row['fifoinfos']}'); \n";
-			
-			$c_sales_items_sql=$c_sales_items_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $c_sales_items_sql;
-		// sales_finish });
-		
-		
-		
-		// receiving_start ({
-		$query=$this->db->query("SELECT receiving_id FROM phppos_receivings WHERE location_id=$cur_location_id ORDER BY receiving_id DESC LIMIT 1");
-		$row=$query->row_array();
-		$last_receiving_id=$row['receiving_id'];
-		
-		/**** insert receiving data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_receivings WHERE location_id=$cur_location_id AND receiving_id>$last_receiving_id ORDER BY receiving_id");
-		$rows=$query->result_array();				
-		$a_receiving_sql="";
-		foreach($rows as $row){
-			if($row['supplier_id']==NULL){
-				$row['supplier_id']="NULL";
-			}
-			if($row['deleted_by']==NULL){
-				$row['deleted_by']="NULL";
-			}
-			if($row['transfer_to_location_id']==NULL){
-				$row['transfer_to_location_id']="NULL";
-			}
-			if($row['deleted_taxes']==NULL){
-				$row['deleted_taxes']="NULL";
-			}
-			$sql="INSERT INTO `phppos_receivings` (`receiving_id`, `supplier_id`, `employee_id`, `payment_type`, `comment`, `suspended`, `location_id`, `transfer_to_location_id`, `deleted`, `deleted_by`, `deleted_taxes`, `is_po`, `receiving_time`) VALUES ('{$row['receiving_id']}', {$row['supplier_id']}, '{$row['employee_id']}', '{$row['payment_type']}', '{$row['comment']}', {$row['suspended']}, '{$row['location_id']}', {$row['transfer_to_location_id']}, {$row['deleted']}, {$row['deleted_by']}, {$row['deleted_taxes']}, {$row['is_po']}, '{$row['receiving_time']}'); \n";
-			
-			$a_receiving_sql=$a_receiving_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $a_receiving_sql;
-		
-		
-		/**** insert receiving_items data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_receivings_items LEFT JOIN phppos_receivings ON phppos_receivings_items.receiving_id=phppos_receivings.receiving_id WHERE phppos_receivings.location_id=$cur_location_id AND phppos_receivings_items.receiving_id>$last_receiving_id ORDER BY phppos_receivings_items.receiving_id");
-		$rows=$query->result_array();				
-		$b_receiving_items_sql="";
-		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_receivings_items`(`receiving_id`, `item_id`, `description`, `serialnumber`, `line`, `quantity_purchased`, `quantity_received`, `item_cost_price`, `item_unit_price`, `discount_percent`, `expire_date`) VALUES ('{$row['receiving_id']}','{$row['item_id']}','{$row['description']}','{$row['serialnumber']}','{$row['line']}','{$row['quantity_purchased']}','{$row['quantity_received']}','{$row['item_cost_price']}','{$row['item_unit_price']}','{$row['discount_percent']}','{$row['expire_date']}'); \n";
-			
-			$b_receiving_items_sql=$b_receiving_items_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $b_receiving_items_sql;
-		// receiving_finish });
-		
-		
-		
-		/**** insert inventory data ****/
-		//$query=$this->hodb->query("SELECT trans_id FROM phppos_inventory WHERE SUBSTR(trans_comment, 1, 3)='Inv' ORDER BY trans_id DESC LIMIT 1");
-		$query=$this->db->query("SELECT trans_id FROM phppos_inventory WHERE location_id=$cur_location_id ORDER BY trans_id DESC LIMIT 1");
-		$row=$query->row_array();
-		$last_trans_id=$row['trans_id'];
-		
-		//echo $last_trans_id." last_trans_id"; //exit;
-		//$query=$this->db->query("SELECT * FROM phppos_inventory WHERE trans_id>$ho_last_trans_id AND SUBSTR(trans_comment, 1, 3)='Inv' ORDER BY trans_id DESC");
-		$query=$this->hodb->query("SELECT * FROM phppos_inventory WHERE location_id=$cur_location_id AND trans_id>$last_trans_id ORDER BY trans_id");
-		$rows=$query->result_array();				
-		$d_inventory_sql="";
-		foreach($rows as $row){
-			$sql="INSERT INTO `phppos_inventory` (`trans_id`, `trans_date`, `trans_items`, `trans_user`, `trans_comment`, `trans_inventory`, `location_id`) VALUES ('{$row['trans_id']}', '{$row['trans_date']}', {$row['trans_items']}, '{$row['trans_user']}', '{$row['trans_comment']}', {$row['trans_inventory']}, '{$row['location_id']}'); \n";
-			
-			$d_inventory_sql=$d_inventory_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $d_inventory_sql;
-		
-		
-		/**** update location_items data ****/
-		$query=$this->hodb->query("SELECT * FROM phppos_inventory WHERE location_id=$cur_location_id AND trans_id>$last_trans_id GROUP BY trans_items");
-		$rows=$query->result_array();
-		$e_location_items_sql="";
-		foreach($rows as $row){
-			
-			$location_id=$row['location_id'];
-			$item_id=$row['trans_items'];
-			
-			$query=$this->hodb->query("SELECT * from phppos_location_items WHERE `location_id` = $location_id AND `item_id` = $item_id");
-			$row1=$query->row_array();
-			
-			$this->db->from('location_items');
-			$this->db->where('item_id',$item_id);
-			$this->db->where('location_id',$location_id);
-			$query = $this->db->get();
-
-			$res=($query->num_rows()==1);
-			if ($res)
-			{
-				$sql="UPDATE `phppos_location_items` SET `quantity` = '{$row1['quantity']}' WHERE `location_id` = $location_id AND `item_id` = $item_id;
-				 \n";
-			}else{
-				$sql="INSERT INTO `phppos_location_items` (`location_id`, `item_id`, `quantity`) VALUES ('$location_id', '$item_id', '{$row1['quantity']}'); \n";
-			}
-			
-			$e_location_items_sql=$e_location_items_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $e_location_items_sql;
-		
-				
-		/**** update customers data ****/
-		//echo "SELECT customer_id FROM phppos_sales WHERE sale_id>$ho_last_sale_id GROUP BY customer_id";
-		$query=$this->hodb->query("SELECT customer_id FROM phppos_sales WHERE location_id=$cur_location_id AND sale_id>$_last_sale_id  GROUP BY customer_id");
-		$rows=$query->result_array();
-		$f_customers_sql="";
-		foreach($rows as $row){
-			$person_id=$row['customer_id'];
-			$query=$this->hodb->query("SELECT * FROM `phppos_customers` WHERE `person_id` = $person_id");
-			$row1=$query->row_array();
-			if($row1['member_id']==NULL){
-				$row1['member_id']="NULL";
-			}
-			$sql="UPDATE `phppos_customers` SET `balance` = '{$row1['balance']}', `points` = '
-			{$row1['points']}', `current_spend_for_points` = '{$row1['current_spend_for_points']}', `current_sales_for_discount` = '{$row1['current_sales_for_discount']}', `is_member` = '{$row1['is_member']}', `member_id` = {$row1['member_id']} WHERE person_id = $person_id; \n";
-			$f_customers_sql=$f_customers_sql.$sql;
-		}
-		//echo "<hr>";
-		//echo $f_customers_sql;
-		
-		$completesql=$a_sales_sql."\n".$b_sales_payments_sql."\n".$c_sales_items_sql."\n".$a_receiving_sql."\n".$b_receiving_items_sql."\n".$d_inventory_sql."\n".$e_location_items_sql."\n".$f_customers_sql;
-		
-		if($completesql!="\n\n\n\n\n\n\n"){
-			$handle = fopen('upload/local-download-'.date("d_m_Y_h_i_sa").'-by-'.$cur_location_id.'.sql','w+');
-			fwrite($handle,$completesql);
-			fclose($handle);
-		}
-		
-		$completesql=$a_sales_sql.$b_sales_payments_sql.$c_sales_items_sql.$a_receiving_sql.$b_receiving_items_sql.$d_inventory_sql.$e_location_items_sql.$f_customers_sql;
-		
-		//echo "s".$completesql."e";
-		
-		if($completesql!=""){
-			
-			$result = mysqli_multi_query($this->db->conn_id,$completesql);
-			/* To solve the error  Commands out of sync; you can't run this command now add following two lines - restart the db ({ */
-			//http://stackoverflow.com/questions/16029729/mysql-error-commands-out-of-sync-you-cant-run-this-command-now
-			$this->db->close();
-			$this->db->initialize();
-			/* }); */
-			
-			if($result==false){
-				var_dump(mysqli_error($this->db->conn_id));
-			}else{
-				echo json_encode(array("success"=>true, "message"=>"successfully downloaded from server."));
-			}
-			
-		}else{
-			echo json_encode(array("success"=>true, "message"=>"Sales are already downloaded from server."));
-		}
-	}
+	
 
 	function index()
 	{

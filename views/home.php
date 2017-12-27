@@ -9,14 +9,22 @@ $this->load->helper('demo');
 		height:50px;
 		background-color:green;
 	}
+	.loadingicon{
+		font-size: 17px !important;
+	}
 </style>
+<link rel="stylesheet" type="text/css" href="http://ionicons.com/1.5.2/css/ionicons.css">
 <div class="alert alert-success" id="uploadtext">
-  If your sales are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload</a>.
-  If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>.
+  If your datas are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload.
+ </a>
+  <!-- If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>. -->
 </div>
 
 <div class="progress hidden" id="progressbar"></div>
-<div class="alert hidden" id="progresstextid">Please wait while uploading sales.</div>
+<div class="alert hidden alert-success" id="progresstextid">
+	<i class="icon ion-looping loadingicon"></i>
+	Please wait while loading .....
+</div>
 <!-- ************************************************************* -->
 
 <?php
@@ -462,51 +470,19 @@ if (!is_on_demo_host() && !$this->config->item('hide_test_mode_home') && !$this-
 		starttran("<?php echo site_url('config/updateFromServer'); ?>");
 	});
 	starttran = function(paraurl){
+		$('#progresstextid').removeClass('hidden');
+		$('#uploadtext').hide();
 		$.ajax({
-			xhr: function () {
-			var xhr = new window.XMLHttpRequest();
-			xhr.addEventListener("progress", function (evt) {
-				$('#progresstextid').removeClass('hidden');
-				$('.progress').removeClass('hidden');
-				if (evt.lengthComputable) {
-					var percentComplete = evt.loaded / evt.total;
-					console.log(percentComplete);
-					setTimeout(function(){
-						$('.progress').css({
-							width: percentComplete * 100 + '%',
-							transition: "width 2s"
-						});
-					}, 100);
-					if (percentComplete === 1) {
-						// $('.progress').addClass('hide');
-						setTimeout(function(){
-							$('#progresstextid').html("");
-						}, 2000);
-					}
-				}
-			}, false);
-			return xhr;
-			},
 			method: 'GET',
 			url: paraurl,
 			dataType: 'json',
 			success: function(data) {
 				console.log('YAYE!', arguments[0]);
-				$('#uploadtext').hide();
-				//setTimeout(function(){
-				//$( "#progressbar" ).progressbar({
-				//  value: 100
-				//});
-				//}, 1000);
-				setTimeout(function(){
-					$('#progresstextid').html(data.message);
-				}, 2000);
+				$('#progresstextid').html(data.message);
 			},
 			error: function() {
 				console.log('AWWW!');
-				setTimeout(function(){
-					$('#progresstextid').html("Something error occoured.");
-				}, 2000);
+				$('#progresstextid').html("Something error occoured.");
 			}
 		});    
 	}
