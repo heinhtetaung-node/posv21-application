@@ -13,7 +13,7 @@ $this->load->helper('demo');
 		font-size: 17px !important;
 	}
 </style>
-<link rel="stylesheet" type="text/css" href="http://ionicons.com/1.5.2/css/ionicons.css">
+<link rel="stylesheet" type="text/css" href="assets/css/ionicon.css">
 <div class="alert alert-success" id="uploadtext">
   If your datas are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload.
  </a>
