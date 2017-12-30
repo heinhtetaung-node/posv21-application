@@ -259,7 +259,7 @@ class Receiving extends CI_Model
 		{
 			$cur_item_info = $this->Item->get_info($item['item_id']);
 			/**** Edited By HeinHtetAung for fix_item_kit_receiving ****/
-			if($cur_item_info->product_id==null){
+			if($cur_item_info->item_id==null){
 				$item_kit_info = $this->Item_kit->get_info($item['item_kit_id']);
 				
 				$old_itemkit = $item_kit_info;
