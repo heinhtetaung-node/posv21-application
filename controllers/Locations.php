@@ -43,6 +43,14 @@ class Locations extends Secure_area implements Idata_controller
 		$data['order_dir'] = $params['order_dir'];
 		$data['total_rows'] = $config['total_rows'];
 		$data['manage_table']=get_locations_manage_table($table_data,$this);
+
+		/* Edited By HeinHtetAung for limit_location ({ */
+		$sql="SELECT COUNT(*) AS cnt FROM phppos_locations WHERE deleted!=1";
+		$res=$this->db->query($sql);
+		$row=$res->row_array();
+		$data['cnt']=$row['cnt'];
+		/* }); */
+		
 		$this->load->view('locations/manage',$data);
 	}
 	

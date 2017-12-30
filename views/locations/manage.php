@@ -55,16 +55,20 @@ $(document).ready(function()
 		<div class="col-md-6 col-sm-6col-xs-6">	
 			<div class="buttons-list">
 				<div class="pull-right-btn">
-					<?php if ($this->Employee->has_module_action_permission($controller_name, 'add_update', $this->Employee->get_logged_in_employee_info()->person_id)) {?>				
-								
-						<?php echo 
-						anchor("$controller_name/view/-1/",
-						'<span class="">'.lang($controller_name.'_new').'</span>',
-						array('class'=>'btn btn-primary btn-lg', 
-							'title'=>lang($controller_name.'_new'),
-							'id' => 'new_location_btn'));
-						?>
+					<!-- Edited by HeinHtetAung for limit_location ({ -->
+					<?php if($cnt<2){ //if customer bought for two locations ?>
+						<?php if ($this->Employee->has_module_action_permission($controller_name, 'add_update', $this->Employee->get_logged_in_employee_info()->person_id)) {?>				
+									
+							<?php echo 
+							anchor("$controller_name/view/-1/",
+							'<span class="">'.lang($controller_name.'_new').'</span>',
+							array('class'=>'btn btn-primary btn-lg', 
+								'title'=>lang($controller_name.'_new'),
+								'id' => 'new_location_btn'));
+							?>
+						<?php } ?>
 					<?php } ?>
+					<!-- }); -->
 				</div>
 			</div>
 		</div>
@@ -74,7 +78,7 @@ $(document).ready(function()
 <div class="row add-location-link">
 	<div class="col-md-12 text-center">
 		<?php if (!is_on_demo_host()) { ?>
-			<div class="alert alert-info" role="alert"><?php echo lang('locations_adding_location_requires_addtional_license'); ?>: <strong><a href="http://amztechnology.com/buy_additional.php" target="_blank"><?php echo lang('locations_purchase_additional_locations'); ?></a></strong></div>
+			<!-- <div class="alert alert-info" role="alert"><?php //echo lang('locations_adding_location_requires_addtional_license'); ?>: <strong><a href="http://amztechnology.com/buy_additional.php" target="_blank"><?php //echo lang('locations_purchase_additional_locations'); ?></a></strong></div> -->
 		<?php } ?>
 	</div>
 </div>
@@ -112,35 +116,35 @@ $(document).ready(function()
 </div>
 <?php if (!is_on_demo_host()) { ?>
 	<script type="text/javascript">
-	$('#new_location_btn').click(function()
-	{
-		bootbox.confirm({
-			message: <?php echo json_encode(lang('locations_confirm_purchase')); ?>, 
-			buttons: {
-	      confirm: {
-	          label: <?php echo json_encode(lang('common_yes')); ?>,
-	          className: 'btn-primary'
-	      },
-	      cancel: {
-	          label: <?php echo json_encode(lang('common_no')); ?>,
-	          className: 'btn-default'
-	      }
-			},
-			callback: function(result)
-			{
-				if (result)
-				{
-					window.location='http://amztechnology.com/buy_additional.php';
-				}
-				else
-				{
-					window.location = $("#new_location_btn").attr('href');
-				}
-			} 
-		});
+	// $('#new_location_btn').click(function()
+	// {
+	// 	bootbox.confirm({
+	// 		message: <?php //echo json_encode(lang('locations_confirm_purchase')); ?>, 
+	// 		buttons: {
+	//       confirm: {
+	//           label: <?php //echo json_encode(lang('common_yes')); ?>,
+	//           className: 'btn-primary'
+	//       },
+	//       cancel: {
+	//           label: <?php //echo json_encode(lang('common_no')); ?>,
+	//           className: 'btn-default'
+	//       }
+	// 		},
+	// 		callback: function(result)
+	// 		{
+	// 			if (result)
+	// 			{
+	// 				window.location='http://amztechnology.com/buy_additional.php';
+	// 			}
+	// 			else
+	// 			{
+	// 				window.location = $("#new_location_btn").attr('href');
+	// 			}
+	// 		} 
+	// 	});
 		
-		return false;
-	})
-	</script>	
+	// 	return false;
+	// })
+	</script>
 <?php } ?>		
 <?php $this->load->view("partial/footer"); ?>
