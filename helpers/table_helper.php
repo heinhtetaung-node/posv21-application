@@ -634,8 +634,9 @@ function get_item_kit_data_row($item_kit,$controller)
 					$qty_per_1kit=$item_kit_items[0]->quantity;	
 					$item_id = $item_kit_items[0]->item_id;
 					$item_location_info = $CI->Item_location->get_info($item_id, false, true);
-					$cur_quantity = $item_location_info->quantity/$qty_per_1kit;
-					$cur_quantity = floor($cur_quantity);
+					$cur_quantity_pkg = $item_location_info->quantity/$qty_per_1kit;
+					$cur_quantity_pcs = $item_location_info->quantity%$qty_per_1kit;
+					$cur_quantity = floor($cur_quantity_pkg)." Pkg, ".$cur_quantity_pcs." Pcs";
 				}
 				$val = $cur_quantity;
 			}
