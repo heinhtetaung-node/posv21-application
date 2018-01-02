@@ -17,7 +17,7 @@ $this->load->helper('demo');
 <div class="alert alert-success" id="uploadtext">
   If your datas are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload.
  </a>
-  <!-- If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>. -->
+  If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>.
 </div>
 
 <div class="progress hidden" id="progressbar"></div>
