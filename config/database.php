@@ -113,3 +113,22 @@ $db['ho']['dbcollat'] = 'utf8_unicode_ci';
 $db['ho']['swap_pre'] = '';
 $db['ho']['autoinit'] = TRUE;
 $db['ho']['stricton'] = FALSE;
+
+
+/* connnect with vpn 
+$db['ho']['hostname'] = '192.168.30.11';
+$db['ho']['username'] = 'remoteuser';
+$db['ho']['password'] = '@P@ssw0rd!)';
+$db['ho']['database'] = 'netstartposv21';
+$db['ho']['dbdriver'] = 'mysqli';
+$db['ho']['dbprefix'] = 'phppos_';
+$db['ho']['pconnect'] = FALSE;
+$db['ho']['db_debug'] = TRUE;
+$db['ho']['cache_on'] = FALSE;
+$db['ho']['cachedir'] = '';
+$db['ho']['char_set'] = 'utf8';
+$db['ho']['dbcollat'] = 'utf8_unicode_ci';
+$db['ho']['swap_pre'] = '';
+$db['ho']['autoinit'] = TRUE;
+$db['ho']['stricton'] = FALSE;
+*/
