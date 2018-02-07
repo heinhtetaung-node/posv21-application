@@ -73,6 +73,7 @@
 
 		<div class="panel">
 			<div class="panel-body">
+
 				<div class="form-group">
 					<?php echo form_label(lang('common_item_number_expanded').':', 'name',array('class'=>'col-sm-3 col-md-3 col-lg-2 control-label  ')); ?>
 					<div class="col-sm-9 col-md-9 col-lg-10">
@@ -165,6 +166,13 @@
 						'rows'=>'5',
 						'cols'=>'17')
 					);?>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label for="item_kit_size" class="col-sm-3 col-md-3 col-lg-2 control-label  ">Item Size:</label>
+					<div class="col-sm-9 col-md-9 col-lg-10">
+						<input type="text" name="item_kit_size" value="<?php echo $item_kit_info->item_kit_size; ?>" class="form-control form-inps" id="item_kit_size">
 					</div>
 				</div>
 
@@ -443,7 +451,7 @@
 							array('id' => 'commission_percent_type'))
 							?>
 						</div>
-					</div>
+					</div>					
 
 				</div>
 				
@@ -911,6 +919,7 @@
 									<?php echo form_hidden('locations['.$location->location_id.'][tax_cumulatives][]', '0'); ?>
 									</div>
 								</div>
+
 							</div>
 							
 							

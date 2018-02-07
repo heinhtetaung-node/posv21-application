@@ -411,6 +411,7 @@ class Item_kits extends Secure_area implements Idata_controller
 		'override_default_tax'=> $this->input->post('override_default_tax') ? $this->input->post('override_default_tax') : 0,
 		'is_ebt_item'=> $this->input->post('is_ebt_item') ? $this->input->post('is_ebt_item') : 0,
 		'tax_class_id'=> $this->input->post('tax_class') ? $this->input->post('tax_class') : NULL,
+		'item_kit_size'=> $this->input->post('item_kit_size') ? $this->input->post('item_kit_size') : NULL,
 		);
 		
 		if ($this->config->item('enable_customer_loyalty_system') && $this->config->item('loyalty_option') == 'advanced')
