@@ -209,7 +209,19 @@
 			    			<td class='col-md-1 col-sm-1'><?php echo $i; ?></td>
 			    			<td class='col-md-2 col-sm-2'><?php echo $item['item_number']; ?></td>
 			    			<td class='col-md-4 col-sm-4'><?php echo $item['name']. ' - ' .$item['description']; ?></td>
-			    			<td class='col-md-1 col-sm-1'><?php echo round_to_nearest_05($item['quantity']); ?></td>
+			    			<?php
+			    			$size = ($item['size']!="")? ' - '.$item['size'] : '';
+			    			if($size==""){
+			    				$cur_item_info = $this->Item->get_info($item['item_id']);
+			    				if($cur_item_info->item_id==null){
+									$item_kit_info = $this->Item_kit->get_info($item['item_kit_id']);
+									if(isset($item_kit_info->item_kit_size)){
+										$size = ($item_kit_info->item_kit_size!="")? " - ".$item_kit_info->item_kit_size : "";
+									}
+								}
+			    			}
+			    			?>
+			    			<td class='col-md-1 col-sm-1'><?php echo round_to_nearest_05($item['quantity']).$size; ?></td>
 			    			<td class='col-md-2 col-sm-2' style='text-align: right;'><?php echo round_to_nearest_05($item['price']); ?></td>
 			    			<td class='col-md-2 col-sm-2' style='text-align: right;'><?php echo round_to_nearest_05($item['price']*$item['quantity']); ?></td>
 			    		</tr>
@@ -269,7 +281,7 @@
 				    		<td class='col-md-3 col-sm-3'>Delivery By</td>
 				    		<td class='col-md-3 col-sm-3'>Delivery Date</td>
 				    		<td class='col-md-3 col-sm-3'>Received By</td>
-				    		<td class='col-md-3 col-sm-3'>Lucky Asia Int'l Co.,LTd</td>
+				    		<td class='col-md-3 col-sm-3'>Tun Trading Co., Ltd</td>
 				    	</tr>
 				    	<tr height="80px">
 				    		<td></td><td></td><td></td><td></td>
