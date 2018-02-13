@@ -1,1 +1,1 @@
-ALTER TABLE  `phppos_sales_item_kits` ADD  `item_kit_size` VARCHAR( 100 ) NOT NULL ;
+ALTER TABLE  `phppos_item_kits` ADD  `item_kit_size` VARCHAR( 100 );
