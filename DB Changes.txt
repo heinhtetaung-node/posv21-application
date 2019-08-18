@@ -1,0 +1,2 @@
+For fix_item_kit_receiving
+1. add column received_itemkit (integer) default null

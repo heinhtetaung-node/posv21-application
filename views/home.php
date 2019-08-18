@@ -1,6 +1,33 @@
 <?php $this->load->view("partial/header"); 
 $this->load->helper('demo');
+?>
 
+<!-- Edited By HeinHtetAung for online_offline_sellings -->
+<style>
+	.progress{
+		width:10px;
+		height:50px;
+		background-color:green;
+	}
+	.loadingicon{
+		font-size: 17px !important;
+	}
+</style>
+<link rel="stylesheet" type="text/css" href="assets/css/ionicon.css">
+<div class="alert alert-success" id="uploadtext">
+  If your datas are not uploaded to server, Please <a id="uploadsale" href="#"><i class="glyphicon glyphicon-upload"></i> Upload.
+ </a>
+  <!-- If something updated in server, Please <a id="downloadsale" href="#"><i class="glyphicon glyphicon-download"></i> Download</a>. -->
+</div>
+
+<div class="progress hidden" id="progressbar"></div>
+<div class="alert hidden alert-success" id="progresstextid">
+	<i class="icon ion-looping loadingicon"></i>
+	Please wait while loading .....
+</div>
+<!-- ************************************************************* -->
+
+<?php
 if (is_on_phppos_host()) {
 ?>
 	<?php if (isset($trial_on) && $trial_on === true) { ?>
@@ -431,6 +458,36 @@ if (!is_on_demo_host() && !$this->config->item('hide_test_mode_home') && !$this-
 		    });
 		}
 	});
+
+
+	/****** Edited by HeinHtetAung for online_offline_selling ******/
+	$('#uploadsale').click(function(e) {
+		e.preventDefault();
+		starttran("<?php echo site_url('config/uploadServer'); ?>");
+	});
+	$('#downloadsale').click(function(e) {
+		e.preventDefault();
+		starttran("<?php echo site_url('config/updateFromServer'); ?>");
+	});
+	starttran = function(paraurl){
+		$('#progresstextid').removeClass('hidden');
+		$('#uploadtext').hide();
+		$.ajax({
+			method: 'GET',
+			url: paraurl,
+			dataType: 'json',
+			success: function(data) {
+				console.log('YAYE!', arguments[0]);
+				$('#progresstextid').html(data.message);
+			},
+			error: function() {
+				console.log('AWWW!');
+				$('#progresstextid').html("Something error occoured.");
+			}
+		});    
+	}
+	/************************************************************************/
+
 </script>
 
 <?php $this->load->view("partial/footer"); ?>

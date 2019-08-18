@@ -740,6 +740,9 @@ class Item_kit extends CI_Model
 			'cost_price' => 										array('sort_column' => 'item_kits.cost_price','label' => lang('common_cost_price'),'format_function' => 'to_currency'),
 			'location_cost_price' => 						array('sort_column' => 'location_cost_price','label' => lang('common_location_cost_price'),'format_function' => 'to_currency'),
 			'unit_price' => 										array('sort_column' => 'item_kits.unit_price','label' => lang('common_unit_price'),'format_function' => 'to_currency'),
+
+			'qty' => array('label' => 'Quantity'), //Edited by HeinHtetAung for item_kit_qty_show
+
 			'description' => 										array('sort_column' => 'item_kits.description','label' => lang('common_description')),
 			'tax_included' => 									array('sort_column' => 'item_kits.tax_included','label' => lang('common_prices_include_tax'),'format_function' => 'boolean_as_string'),
 			'override_default_tax'  => 					array('sort_column' => 'item_kits.override_default_tax','label' => lang('common_override_default_tax'),'format_function' => 'boolean_as_string'),		
@@ -757,7 +760,8 @@ class Item_kit extends CI_Model
 	
 	function get_default_columns()
 	{
-		return array('item_kit_id','item_kit_number','name','category_id','cost_price','unit_price');
+		return array('item_kit_id','item_kit_number','name','category_id','cost_price','unit_price', 'qty'); //Edited By HeinHtetAung for item_kit_qty_show
+
 	}
 }
 ?>

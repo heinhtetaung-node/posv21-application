@@ -94,3 +94,22 @@ $db['site']['autoinit'] = TRUE;
 $db['site']['stricton'] = FALSE;
 $db['site']['failover'] = array();
 $db['site']['save_queries'] = FALSE;
+
+
+
+//<!-- multilocation offline selling -->
+$db['ho']['hostname'] = 'localhost:3305';
+$db['ho']['username'] = 'root';
+$db['ho']['password'] = '';
+$db['ho']['database'] = 'posv21_multilocation_online';
+$db['ho']['dbdriver'] = 'mysqli';
+$db['ho']['dbprefix'] = 'phppos_';
+$db['ho']['pconnect'] = FALSE;
+$db['ho']['db_debug'] = TRUE;
+$db['ho']['cache_on'] = FALSE;
+$db['ho']['cachedir'] = '';
+$db['ho']['char_set'] = 'utf8';
+$db['ho']['dbcollat'] = 'utf8_unicode_ci';
+$db['ho']['swap_pre'] = '';
+$db['ho']['autoinit'] = TRUE;
+$db['ho']['stricton'] = FALSE;

@@ -348,15 +348,32 @@
 										}
 										?>
 									</dd>
-										<?php if (isset($item['item_id']) && $item['item_id']) 
+										<!-- Edited By HeinHtetAung for item_kit_stock_show -->
+										<?php 
+										if (isset($item['item_id']) && $item['item_id']) 
 										{ 
 											$item_location_info = $this->Item_location->get_info($item['item_id'], false, true);
-											
 											$cur_quantity = $item_location_info->quantity;
 											?>
 											<dt><?php echo lang('common_stock'); ?></dt>
 											<dd><?php echo to_quantity($cur_quantity); ?></dd>
-										<?php } ?>
+											<?php
+										}else{
+											$item_kit_items = $this->Item_kit_items->get_info($item['item_kit_id']);
+											if(sizeof($item_kit_items)==1){
+												$qty_per_1kit=$item_kit_items[0]->quantity;	
+												$item_id = $item_kit_items[0]->item_id;
+												$item_location_info = $this->Item_location->get_info($item_id, false, true);
+												$cur_quantity = $item_location_info->quantity/$qty_per_1kit;
+												$cur_quantity = floor($cur_quantity);
+												?>
+												<dt><?php echo lang('common_stock'); ?></dt>
+												<dd><?php echo to_quantity($cur_quantity); ?></dd>
+												<?php
+											}
+										}
+										?>
+										<!-- *************** -->
 									</dl>
 								</td>
 							</tr>
